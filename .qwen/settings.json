@@ -1,7 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "Bash(dotnet *)"
+      "Bash(dotnet *)",
+      "Bash(taskkill *)"
     ]
-  }
+  },
+  "$version": 3
 }

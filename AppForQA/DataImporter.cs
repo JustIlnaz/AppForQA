@@ -1,81 +1,96 @@
 using AppForQA.Context;
 using AppForQA.Models;
 using System;
-using System.IO;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace AppForQA
 {
     public class DataImporter
     {
-        public void Import(string path)
+        /// <summary>
+        /// Импортирует (считывает) все записи людей из базы данных.
+        /// При ошибке возвращает пустой список.
+        /// </summary>
+        public List<Person> Import()
         {
-            if (!File.Exists(path))
+            try
             {
-                throw new FileNotFoundException($"Файл '{path}' не найден.");
+                using var db = new AppDbContext();
+                return db.People.ToList();
             }
-
-            using var db = new AppDbContext();
-            var lines = File.ReadAllLines(path);
-
-            foreach (var line in lines)
+            catch
             {
-                var parts = line.Split(';');
-                string fullName;
-                if (parts.Length >= 2)
-                {
-                    // Формат "Id;FullName"
-                    fullName = parts[1];
-                }
-                else
-                {
-                    // Формат "FullName" (простая строка)
-                    fullName = parts[0];
-                }
-
-                if (!db.People.Any(p => p.FullName == fullName))
-                {
-                    db.People.Add(new Person { FullName = fullName });
-                }
+                return new List<Person>();
             }
-
-            db.SaveChanges();
         }
 
-        public void Import(string path, out string line)
+        /// <summary>
+        /// Импортирует записи из БД и возвращает их в виде форматированной строки.
+        /// При ошибке возвращает сообщение об ошибке.
+        /// </summary>
+        public void Import(out string line)
         {
-            if (!File.Exists(path))
+            try
             {
-                line = string.Empty;
-                throw new FileNotFoundException($"Файл '{path}' не найден.");
+                using var db = new AppDbContext();
+                var people = db.People.ToList();
+
+                if (people.Count == 0)
+                {
+                    line = "База данных пуста";
+                    return;
+                }
+
+                var formatted = people.Select(p => $"{p.Id}. {p.FullName}");
+                line = string.Join("\r\n", formatted);
             }
-
-            line = File.ReadAllText(path);
-
-            // Также импортируем данные в БД
-            var lines = line.Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries);
-            using var db = new AppDbContext();
-
-            foreach (var l in lines)
+            catch (Exception ex)
             {
-                var parts = l.Split(';');
-                string fullName;
-                if (parts.Length >= 2)
-                {
-                    fullName = parts[1];
-                }
-                else
-                {
-                    fullName = parts[0];
-                }
-
-                if (!db.People.Any(p => p.FullName == fullName))
-                {
-                    db.People.Add(new Person { FullName = fullName });
-                }
+                line = $"Ошибка импорта: {ex.Message}";
             }
+        }
 
-            db.SaveChanges();
+        /// <summary>
+        /// Импортирует записи, отфильтрованные по частичному совпадению имени.
+        /// При ошибке возвращает пустой список.
+        /// </summary>
+        public List<Person> ImportByFilter(string searchText)
+        {
+            try
+            {
+                using var db = new AppDbContext();
+
+                if (string.IsNullOrWhiteSpace(searchText))
+                {
+                    return db.People.ToList();
+                }
+
+                return db.People
+                    .Where(p => p.FullName != null && p.FullName.Contains(searchText))
+                    .ToList();
+            }
+            catch
+            {
+                return new List<Person>();
+            }
+        }
+
+        /// <summary>
+        /// Возвращает количество записей в БД.
+        /// При ошибке возвращает -1.
+        /// </summary>
+        public int GetRecordCount()
+        {
+            try
+            {
+                using var db = new AppDbContext();
+                return db.People.Count();
+            }
+            catch
+            {
+                return -1;
+            }
         }
     }
 }

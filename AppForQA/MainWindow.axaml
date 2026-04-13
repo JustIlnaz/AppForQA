@@ -4,27 +4,42 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="AppForQA.MainWindow"
-  Title="Экспорт / Импорт">
+  Title="Управление данными (БД)">
 
     <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" Spacing="10">
 
-        <Button Content="Экспорт"
-                Width="200"
-                Click="Export_Click"/>
+        <TextBlock Text="Добавить запись:"
+                   FontSize="16"
+                   HorizontalAlignment="Center"/>
 
-        <Button Content="Импорт"
+        <TextBox Name="NameInput"
+                 Width="300"
+                 Watermark="Введите ФИО"/>
+
+        <Button Content="Добавить в БД"
                 Width="200"
-                Click="Import_Click"/>
+                Click="AddRecord_Click"/>
+
+        <Button Content="Обновить список"
+                Width="200"
+                Click="Refresh_Click"/>
 
         <TextBlock Name="StatusText"
                    Text="Готово"
-                   HorizontalAlignment="Center"/>
+                   HorizontalAlignment="Center"
+                   Foreground="Green"/>
+
+        <TextBlock Text="Записи в БД:"
+                   FontSize="14"
+                   HorizontalAlignment="Center"
+                   Margin="0,10,0,0"/>
 
         <TextBlock Name="ImportedDataText"
                    Text=""
                    HorizontalAlignment="Center"
                    TextWrapping="Wrap"
-                   MaxWidth="400"/>
+                   MaxWidth="400"
+                   MaxHeight="200"/>
 
     </StackPanel>
 </Window>

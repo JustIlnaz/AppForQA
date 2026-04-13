@@ -1,58 +1,97 @@
 using Avalonia.Controls;
 using Avalonia.Interactivity;
+using AppForQA.Models;
 using System;
 
 namespace AppForQA
 {
     public partial class MainWindow : Window
     {
-        private string path = "data.txt";
-
         public MainWindow()
         {
             InitializeComponent();
 
-            // Импорт данных из файла при загрузке формы
-            try
-            {
-                var importer = new DataImporter();
-                importer.Import(path, out string data);
-                ImportedDataText.Text = data;
-            }
-            catch
-            {
-                ImportedDataText.Text = "Файл данных не найден";
-            }
+            // Загружаем данные из БД при открытии окна
+            LoadDataFromDatabase();
         }
 
-        private void Export_Click(object? sender, RoutedEventArgs e)
+        /// <summary>
+        /// Загружает все записи из БД и отображает их.
+        /// </summary>
+        private void LoadDataFromDatabase()
         {
             try
             {
+                var importer = new DataImporter();
+                importer.Import(out string data);
+                ImportedDataText.Text = data;
+
+                int count = importer.GetRecordCount();
+                if (count >= 0)
+                {
+                    StatusText.Text = $"Загружено записей: {count}";
+                }
+                else
+                {
+                    StatusText.Text = "Ошибка подсчёта записей";
+                }
+            }
+            catch (Exception ex)
+            {
+                StatusText.Text = $"Ошибка загрузки: {ex.Message}";
+                ImportedDataText.Text = "Не удалось загрузить данные";
+            }
+        }
+
+        /// <summary>
+        /// Добавляет новую запись в БД (экспорт).
+        /// </summary>
+        private void AddRecord_Click(object? sender, RoutedEventArgs e)
+        {
+            try
+            {
+                string? name = NameInput.Text?.Trim();
+
+                if (string.IsNullOrWhiteSpace(name))
+                {
+                    StatusText.Text = "Введите ФИО!";
+                    return;
+                }
+
+                // Экспортируем (добавляем) запись в БД — передаём только строку
                 var exporter = new DataExporter();
-                exporter.Export(path);
+                bool success = exporter.Export(name, out string errorMessage);
 
-                StatusText.Text = "Экспорт выполнен!";
+                if (success)
+                {
+                    NameInput.Text = "";
+                    StatusText.Text = $"Запись '{name}' добавлена в БД!";
+                    // Обновляем отображение
+                    LoadDataFromDatabase();
+                }
+                else
+                {
+                    StatusText.Text = $"Ошибка: {errorMessage}";
+                }
             }
             catch (Exception ex)
             {
-                StatusText.Text = $"Ошибка: {ex.Message}";
+                StatusText.Text = $"Непредвиденная ошибка: {ex.Message}";
             }
         }
 
-        private void Import_Click(object? sender, RoutedEventArgs e)
+        /// <summary>
+        /// Обновляет список записей из БД (импорт).
+        /// </summary>
+        private void Refresh_Click(object? sender, RoutedEventArgs e)
         {
             try
             {
-                var importer = new DataImporter();
-                importer.Import(path, out string data);
-                ImportedDataText.Text = data;
-
-                StatusText.Text = "Импорт выполнен!";
+                LoadDataFromDatabase();
             }
             catch (Exception ex)
             {
-                StatusText.Text = $"Ошибка: {ex.Message}";
+                StatusText.Text = $"Ошибка обновления: {ex.Message}";
             }
         }
     }
